@@ -158,6 +158,41 @@ node scripts/setup.js --dry-run
 
 `会话` 显示的是**当前会话累计费用**：主对话 + 子代理里所有请求的总和，不是上一轮对话，也不是当前上下文窗口里那部分 token 的价格。`/clear` 或开新会话后归零。`ctx` 才是当前上下文窗口占用。
 
+## 切换模型会发生什么
+
+切换 `/model` 不会让状态栏崩溃，但不同部分的表现不一样：
+
+- **模型名 / `ctx` / `cache`**：来自 Claude Code，本身与模型无关，切换后照常更新。
+- **会话费用**：按 transcript 里**每条消息自己的 `model`** 查 `pricingCny` / `pricing`。切换前的老消息按老模型价，切换后的新消息按新模型价，最后累加；`会话` 是整段会话的累计值，模型行只显示当前模型。
+  - 已知模型（例如 `deepseek-v4-pro`）：正常计价
+  - 未知模型（例如 `claude-opus-5-5`、还没配置的 `deepseek-v3.5`）：不猜价；全是未知时显示 `--`，已知+未知混合时显示 `¥x.xx+?`
+- **余额**：只有 `ANTHROPIC_BASE_URL` 指向 `api.deepseek.com` 时才会带 key 请求；切到 Anthropic 官方或其他中转时显示 `--`。状态栏不会把 key 发到非 DeepSeek 地址，除非你自己设置 `balance.url`。
+- **峰 / 谷**：按 DeepSeek 的时段计算，与当前模型无关。切到 Claude 模型时这个标记没有实际意义，但仍然会显示（目前没有自动隐藏）。
+- **cache**：切换 `/model` 会让该模型的 prompt cache 失效，切换后的第一条请求可能显示 cache 命中率下降，之后会恢复；`cache` 只统计主对话。
+
+实测例子（用当前价格表）：
+
+```text
+deepseek-v4-pro   → 会话 ¥36.00
+claude-opus-5-5   → 会话 --
+deepseek-v3.5     → 会话 --
+```
+
+### 给新模型加价格
+
+在 `config.json` 的 `pricingCny`（人民币）或 `pricing`（美元）里加一行；`[1M]` / `[1m]` 后缀会自动去掉后匹配：
+
+```json
+"pricingCny": {
+  "deepseek-v3.5": {
+    "peak":    { "input": 2, "output": 8, "cacheRead": 0.04, "cacheWrite": 2 },
+    "offPeak": { "input": 1, "output": 4, "cacheRead": 0.02, "cacheWrite": 1 }
+  }
+}
+```
+
+四个费率都必填，单位是每百万 token。`costCurrency` 是全局的：人民币和美元模型混用时，费用只能按同一种货币显示，金额会不准确；需要精确混用时要分开配置，或者给插件加“每模型货币”支持。
+
 ## 限制
 
 - Claude Code 官方不支持把 CLI 接到非 Claude 模型；本插件按 transcript 数据计算，transcript 是内部格式，可能随版本变化。解析失败时会显示 `--`，不会给出错误数字。
