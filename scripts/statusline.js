@@ -602,7 +602,7 @@ function main() {
   if (hit !== undefined && hit !== null && Number.isFinite(Number(hit))) {
     hit = Number(hit);
     if (hit <= 1) hit *= 100;
-    hit = Math.max(0, Math.min(100, Math.round(hit)));
+    hit = Math.max(0, Math.min(100, hit));
   } else {
     hit = null;
   }
@@ -625,7 +625,7 @@ function main() {
   const sep = cfg.infoSeparator || ' | ';
   const info = [
     `${C.cyan}${model}${C.reset}${C.gray}${sep}ctx ${pct}%${C.reset}`,
-    `${C.gray}${hit === null ? '' : `cache ${hit}%${sep}`}${cfg.labels.session} ${C.yellow}${costText}${C.reset}`,
+    `${C.gray}${hit === null ? '' : `cache ${hit.toFixed(1)}%${sep}`}${cfg.labels.session} ${C.yellow}${costText}${C.reset}`,
     `${balanceInfo.color}${balanceInfo.text}${C.reset}${C.gray}${sep}${C.reset}${peakColor}${peakLabel}${C.reset}`,
   ];
 

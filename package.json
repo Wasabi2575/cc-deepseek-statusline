@@ -1,6 +1,6 @@
 {
   "name": "deepseek-whale-statusline",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Three-line status line for the Claude Code terminal CLI with a hand-drawn DeepSeek whale, CNY session cost, peak/off-peak rate, cache hit rate, context usage, and account balance.",
   "license": "MIT",
   "repository": {

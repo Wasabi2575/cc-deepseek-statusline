@@ -12,7 +12,7 @@
 - **真实 DeepSeek 费用**：读取主 transcript 和子代理 transcript，按每条请求发生时的峰/谷价计算；不使用 Claude Code 的 Claude 价格估算。
 - **峰/谷指示**：`峰` 表示高峰价，`谷` 表示空闲价，显示在余额后面。
 - **账户余额**：请求 `GET https://api.deepseek.com/user/balance`，60 秒缓存，后台子进程刷新，不阻塞状态栏。
-- **缓存和上下文**：`cache` 显示 prompt cache 命中率，`ctx` 显示上下文窗口占用。
+- **缓存和上下文**：`cache` 显示 prompt cache 命中率（一位小数，例如 `99.8%`），`ctx` 显示上下文窗口占用。
 - **逐格颜色**：`whaleColors` 支持每个格子单独配色；默认图案就是截图里的鲸鱼。
 - **零依赖**：一个 Node 脚本，不需要 npm 包。
 
