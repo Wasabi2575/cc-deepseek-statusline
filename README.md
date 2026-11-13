@@ -1,59 +1,50 @@
 # deepseek-whale
 
-A three-row status line for the Claude Code **terminal CLI**, with a hand-drawn blue DeepSeek whale on the left and live numbers on the right. It shows the model and context usage, prompt-cache hit rate, the real cost of the current session, your DeepSeek account balance, and whether DeepSeek is currently charging peak or off-peak rates.
+给 Claude Code **终端 CLI** 用的三行状态栏。左边是手绘的 DeepSeek 小鲸鱼，右边显示模型、上下文、缓存命中率、本次会话费用、账户余额，以及当前是峰价还是谷价。
 
-```text
-o  ▄▄▄                                            deepseek-flash · ctx 42%
-o ▐███▌▐▌~~~                                       cache 91% · 会话 ¥0.35
- o▐█████                                            余额 ¥98.20 · 谷
-```
+![状态栏预览](assets/preview.png)
 
-> 🐋 The whale is hand-drawn by the author. Sorry if it looks a little rough — and thanks for trying it anyway.
->
 > 鲸鱼是作者自己画的，不好看请见谅~
 
-## Features
+## 功能
 
-- **Three-line status line** — the whale occupies three rows on the left; the numbers are right-aligned, so they sit in the bottom-right corner of the terminal.
-- **DeepSeek-priced session cost** — reads the session transcript (including subagent transcripts), deduplicates streamed messages, and applies DeepSeek's peak/off-peak prices per request. It does not trust Claude Code's Claude-priced `total_cost_usd`. The result is a local estimate, not an invoice.
-- **Peak / off-peak indicator** — `峰` during DeepSeek's peak windows and `谷` otherwise, placed after the balance. Labels are configurable.
-- **Account balance** — calls `GET https://api.deepseek.com/user/balance`, caches the result for 60 seconds, and refreshes in a detached child process so the status line never waits on the network.
-- **Cache and context** — `cache 91%` comes from `prompt_cache.hit_ratio`; `ctx 42%` from `context_window.used_percentage`.
-- **No dependencies** — one Node script, no npm packages.
+- **三行状态栏**：左侧 3 行鲸鱼，右侧信息右对齐，位于终端右下角。
+- **真实 DeepSeek 费用**：读取主 transcript 和子代理 transcript，按每条请求发生时的峰/谷价计算；不使用 Claude Code 的 Claude 价格估算。
+- **峰/谷指示**：`峰` 表示高峰价，`谷` 表示空闲价，显示在余额后面。
+- **账户余额**：请求 `GET https://api.deepseek.com/user/balance`，60 秒缓存，后台子进程刷新，不阻塞状态栏。
+- **缓存和上下文**：`cache` 显示 prompt cache 命中率，`ctx` 显示上下文窗口占用。
+- **逐格颜色**：`whaleColors` 支持每个格子单独配色；默认图案就是截图里的鲸鱼。
+- **零依赖**：一个 Node 脚本，不需要 npm 包。
 
-## Requirements
+## 环境要求
 
-- Claude Code with multi-line status line support (2.1.x or newer).
-- Node.js 18 or newer.
-- A DeepSeek API key reachable through `ANTHROPIC_AUTH_TOKEN` or `DEEPSEEK_API_KEY` if you want the balance row. The balance endpoint only exists on `api.deepseek.com`; a third-party relay needs a custom `balance.url`.
+- Claude Code 2.1.x 或更新版本（支持多行 statusLine）。
+- Node.js 18 或更新版本。
+- 想显示余额需要 DeepSeek API Key：优先 `DEEPSEEK_API_KEY`，其次 `config.json` 里的 `apiKey`，最后在 `ANTHROPIC_BASE_URL` 指向 `api.deepseek.com` 时使用 `ANTHROPIC_AUTH_TOKEN`。
+- 余额接口只在 `api.deepseek.com` 上可用；第三方中转需要自己设置 `balance.url`，或者关闭余额。
+- 只支持 Claude Code 终端 CLI；桌面版和 IDE 扩展不渲染自定义状态栏。
 
-## Install as a Claude Code plugin
+## 插件安装
 
 ```bash
 /plugin install deepseek-whale --marketplace Wasabi2575/cc-deepseek-statusline
 /deepseek-whale:setup
 ```
 
-Then restart Claude Code if the whale does not appear immediately. From a shell, the same install is:
+如果鲸鱼没有马上出现，重启 Claude Code。setup 会：
+
+- 把 `statusline.js` 复制到 `~/.claude/deepseek-whale/`
+- 写入默认 `config.json`（已存在则不覆盖）
+- 备份 `~/.claude/settings.json`
+- 添加 `statusLine` 配置
+
+命令行安装：
 
 ```bash
 claude plugin install deepseek-whale --marketplace Wasabi2575/cc-deepseek-statusline
 ```
 
-The setup skill copies the script to `~/.claude/deepseek-whale/`, writes a default `config.json`, backs up `~/.claude/settings.json`, and adds:
-
-```json
-{
-  "statusLine": {
-    "type": "command",
-    "command": "\"<node>\" \"<home>/.claude/deepseek-whale/statusline.js\"",
-    "padding": 0,
-    "refreshInterval": 30
-  }
-}
-```
-
-## Manual install
+## 手动安装
 
 ```bash
 git clone https://github.com/Wasabi2575/cc-deepseek-statusline.git
@@ -61,22 +52,21 @@ cd cc-deepseek-statusline
 node scripts/setup.js
 ```
 
-Preview without touching settings:
+预览（不修改设置）：
 
 ```bash
 node scripts/statusline.js --demo
 ```
 
-Install with an existing settings backup check:
+查看会写入什么：
 
 ```bash
 node scripts/setup.js --dry-run
-node scripts/setup.js
 ```
 
-## Configuration
+## 配置
 
-Edit `~/.claude/deepseek-whale/config.json`:
+编辑 `~/.claude/deepseek-whale/config.json`：
 
 ```json
 {
@@ -134,70 +124,62 @@ Edit `~/.claude/deepseek-whale/config.json`:
 }
 ```
 
-The info block is right-aligned; the three rows have different lengths, so their left edges naturally differ.
+### 配置说明
 
-`pricing` is USD per million tokens; `pricingCny` is CNY. `costCurrency` selects the table and symbol: `"CNY"` uses `pricingCny` and `¥`, `"USD"` uses `pricing` and `$`. Update both when DeepSeek changes its price sheet. `cacheWrite` matters only if your endpoint reports `cache_creation_input_tokens`; DeepSeek's automatic cache usually reports `0`.
+- `infoAlign`：`"right"` 右边缘对齐，`"left"` 左边缘对齐。右对齐时三行长度不同，左边起点会参差，这是正常的。
+- `widthMargin`：右边距，默认 `6`。如果状态栏右边被截断或出现 `…`，可以调大（8/10/12）。
+- `costCurrency`：`"CNY"` 使用 `pricingCny` 并显示 `¥`；`"USD"` 使用 `pricing` 并显示 `$`。余额货币由余额接口返回的 `currency` 决定。
+- `pricing`：美元 / 百万 token；`pricingCny`：人民币 / 百万 token。DeepSeek 调价时两个表都要更新。
+- `cacheWrite`：只有当接口返回 `cache_creation_input_tokens` 时才有意义；DeepSeek 自动缓存通常返回 `0`。
+- `holidays`：中国法定节假日的 `YYYY-MM-DD`（北京时间），这些工作日按谷价计算。
+- `whaleArt` / `whaleColors`：三行图案和可选的逐格颜色。空格透明；没有指定颜色的格子回退到 `whaleColor` / `whaleAccentColor` / `whaleEyeColor`。
+- `balance.enabled`：设为 `false` 可关闭余额请求，第三行只显示峰/谷。
 
-The `会话` figure is the cumulative cost of the current session: every assistant request in the main transcript plus the subagent transcripts, priced per request at the rate in effect. It is **not** the last turn and **not** the tokens currently in the context window. It resets on `/clear` or a new session; `ctx` is the context-window usage.
-
-`holidays` accepts `YYYY-MM-DD` dates in Beijing time. DeepSeek treats those weekdays as off-peak.
-
-### Custom art
-
-The icon lives in `whaleArt` (three strings) and `whaleColors` (optional per-cell hex colours) in `~/.claude/deepseek-whale/config.json`. Spaces stay transparent; characters without a colour use `whaleColor` / `whaleAccentColor` / `whaleEyeColor`.
-
-### Balance key
-
-The script resolves the key in this order:
+### 余额 Key 的读取顺序
 
 1. `DEEPSEEK_API_KEY`
-2. `apiKey` in `config.json`
-3. `ANTHROPIC_AUTH_TOKEN`, but only when `ANTHROPIC_BASE_URL` contains `api.deepseek.com`
+2. `config.json` 里的 `apiKey`
+3. `ANTHROPIC_AUTH_TOKEN`，但仅当 `ANTHROPIC_BASE_URL` 包含 `api.deepseek.com`
 
-It never sends the key to a non-DeepSeek balance URL unless you set `balance.url` yourself.
+脚本不会把 Key 发送到非 DeepSeek 的余额地址，除非你自己设置了 `balance.url`。
 
-## How the cost is computed
+## 费用怎么算
 
-For every `assistant` entry in the main transcript and in `subagents/*.jsonl`:
+对主 transcript 和 `subagents/*.jsonl` 里的每条 `assistant` 记录：
 
 ```text
-cost = input_tokens        × input rate
-     + output_tokens       × output rate
-     + cache_read_tokens   × cacheRead rate
-     + cache_write_tokens  × cacheWrite rate
+费用 = input_tokens        × 输入单价
+     + output_tokens       × 输出单价
+     + cache_read_tokens   × 缓存命中单价
+     + cache_write_tokens  × 缓存写入单价
 ```
 
-Each request is priced at the rate in effect at its own timestamp, then summed. Duplicate message IDs from streaming updates are collapsed, keeping the last usage block. Results are cached against the transcript's size and mtime.
+每条请求按它自己的时间戳选择峰价/谷价，然后累加；流式产生的重复 `message.id` 会去重，只保留最后一次 usage。结果按 transcript 的大小和修改时间缓存。
 
-## Limitations
+`会话` 显示的是**当前会话累计费用**：主对话 + 子代理里所有请求的总和，不是上一轮对话，也不是当前上下文窗口里那部分 token 的价格。`/clear` 或开新会话后归零。`ctx` 才是当前上下文窗口占用。
 
-- Claude Code does not officially support routing to non-Claude models. This plugin treats the transcript as data; the transcript format is internal and may change between releases. If parsing fails, cost shows `--` instead of a wrong number.
-- Subagent transcripts are included when they live under `<session-id>/subagents/`. Other background work may not be.
-- DeepSeek's balance endpoint is not available on third-party relays. Set `balance.enabled: false` or a custom `balance.url` in that case.
-- Prices and peak windows can change; the defaults are current as of November 2026. The status line command embeds the absolute path to the Node binary used at setup time; if you upgrade or move Node, re-run `node scripts/setup.js`.
-- Multi-line status lines with ANSI colors can occasionally render imperfectly in very narrow terminals; below roughly 56 columns the whale is hidden and only the text rows are shown.
+## 限制
 
-## Uninstall
+- Claude Code 官方不支持把 CLI 接到非 Claude 模型；本插件按 transcript 数据计算，transcript 是内部格式，可能随版本变化。解析失败时会显示 `--`，不会给出错误数字。
+- 子代理费用只覆盖 `<session-id>/subagents/` 下的 transcript；其他后台任务可能不计入。
+- DeepSeek 余额接口不在第三方中转上；需要自定义 `balance.url` 或关闭余额。
+- 价格和峰谷时段可能变化；默认值截至 2026 年 11 月。
+- 不同终端对中文、`·`、`¥` 的宽度处理可能不同，右边缘可能偏 1 格；可以调 `widthMargin` 或改用 `infoAlign: "left"`。
+- 本状态栏只适用于 Claude Code 终端 CLI。
+
+## 卸载
 
 ```bash
 node ~/.claude/deepseek-whale/uninstall.js
-# or, from a checkout:
+```
+
+或者从仓库：
+
+```bash
 node scripts/uninstall.js --purge
 ```
 
-The uninstaller only removes a `statusLine` that points at `deepseek-whale`.
-
-## Publishing this repository
-
-```bash
-git init
-git add .
-git commit -m "Release deepseek-whale v1.0.0"
-gh repo create cc-deepseek-statusline --public --source=. --push
-git push origin v1.0.0
-```
-
-Repository: https://github.com/Wasabi2575/cc-deepseek-statusline. The marketplace file is `.claude-plugin/marketplace.json`; the plugin manifest is `.claude-plugin/plugin.json`.
+卸载脚本只会删除指向 `deepseek-whale` 的 `statusLine` 配置；`--purge` 会同时删除 `~/.claude/deepseek-whale` 目录。
 
 ## License
 
