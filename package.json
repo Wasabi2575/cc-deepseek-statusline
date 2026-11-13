@@ -1,0 +1,29 @@
+{
+  "name": "deepseek-whale-statusline",
+  "version": "1.0.0",
+  "description": "Three-line status line for the Claude Code terminal CLI with a hand-drawn DeepSeek whale, CNY session cost, peak/off-peak rate, cache hit rate, context usage, and account balance.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Wasabi2575/cc-deepseek-statusline.git"
+  },
+  "bin": {
+    "deepseek-whale": "scripts/setup.js"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "uninstall": "node scripts/uninstall.js",
+    "preview": "node scripts/statusline.js --demo",
+    "validate": "claude plugin validate ."
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    ".claude-plugin",
+    "scripts",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ]
+}

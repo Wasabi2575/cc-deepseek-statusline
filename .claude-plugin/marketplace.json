@@ -1,0 +1,14 @@
+{
+  "name": "cc-deepseek-statusline",
+  "description": "A DeepSeek whale status line for the Claude Code terminal CLI.",
+  "owner": {
+    "name": "Wasabi2575"
+  },
+  "plugins": [
+    {
+      "name": "deepseek-whale",
+      "source": "./",
+      "description": "Hand-drawn DeepSeek whale status line with CNY session cost, peak/off-peak rate, and account balance."
+    }
+  ]
+}
